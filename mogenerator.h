@@ -42,6 +42,16 @@
 - (NSString*)objectAttributeType;
 - (BOOL)hasTransformableAttributeType;
 - (BOOL)isReadonly;
+- (BOOL)isZ_Attribute;
+- (BOOL)isRegular;
+- (BOOL)isCEEQuantity;
+- (BOOL)isCEECurrency;
+- (BOOL)isUOMGuid;
+- (NSString*)uomGuidPrefix;
+- (BOOL)isCurrencyGuid;
+- (NSString*)currencyGuidPrefix;
+- (BOOL)isCurrencyGuid1;
+- (NSString*)currencyGuid1Prefix;
 @end
 
 @interface NSRelationshipDescription (collectionClassName)
@@ -49,12 +59,18 @@
 - (NSString*)immutableCollectionClassName;
 - (BOOL)jr_isOrdered;
 @end
+
+@interface NSFetchedPropertyDescription (targetEntity)
+-(NSEntityDescription *)targetEntity;
+@end
+
 @interface NSObject (JustHereToSuppressIsOrderedNotImplementedCompilerWarning)
 - (BOOL)isOrdered;
 @end
 
 @interface NSString (camelCaseString)
 - (NSString*)camelCaseString;
+- (NSString*)replaceDotsByUnderscore;
 @end
 
 @interface MOGeneratorApp : NSObject <DDCliApplicationDelegate> {

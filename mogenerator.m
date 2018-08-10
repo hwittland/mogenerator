@@ -438,6 +438,13 @@ static const NSString *const kReadOnly = @"mogenerator.readonly";
 
     NSString *attributeValueScalarType = [[self userInfo] objectForKey:kAttributeValueScalarTypeKey];
 
+    if (attributeValueScalarType == nil) {
+        attributeValueScalarType = [[self userInfo] objectForKey:@"valueSet"];
+        if (attributeValueScalarType != nil) {
+            attributeValueScalarType = attributeValueScalarType.replaceDotsByUnderscore;
+        }
+    }
+    
     if (attributeValueScalarType) {
         return attributeValueScalarType;
     } else {
@@ -599,6 +606,101 @@ static const NSString *const kReadOnly = @"mogenerator.readonly";
     return NO;
 }
 
+- (BOOL)isZ_Attribute {
+    return [[self name] hasPrefix:@"z_"];
+}
+
+- (BOOL)isRegular {
+    return !self.isCEEQuantity && !self.isCEECurrency;
+}
+
+- (BOOL)isCEEQuantity {
+    NSString *ceeType = [[self userInfo] valueForKey:@"ceeType"];
+    if (ceeType != nil && [ceeType isEqualToString:@"CEEQuantity"]) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+- (BOOL)isCEECurrency {
+    NSString *ceeType = [[self userInfo] valueForKey:@"ceeType"];
+    if (ceeType != nil && [ceeType isEqualToString:@"CEECurrency"]) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+- (BOOL)isUOMGuid {
+    BOOL uomGuid = [[self name] hasSuffix:@"UOMGuid"];
+    
+    if (uomGuid) {
+        
+        NSString *amountAttribName = [NSString stringWithFormat:@"%@Amount",[self uomGuidPrefix]];
+        
+        NSAttributeDescription *attrib = [self.entity attributesByName][amountAttribName];
+        
+        if (attrib != nil) {
+            return YES;
+        }
+        
+        
+    }
+    
+    return NO;
+}
+
+- (NSString*)uomGuidPrefix {
+    return [[self name] substringToString:@"UOMGuid"];
+}
+
+- (BOOL)isCurrencyGuid {
+    BOOL uomGuid = [[self name] hasSuffix:@"CurrencyGuid"];
+    
+    if (uomGuid) {
+        
+        NSString *amountAttribName = [NSString stringWithFormat:@"%@Amount",[self currencyGuidPrefix]];
+        
+        NSAttributeDescription *attrib = [self.entity attributesByName][amountAttribName];
+        
+        if (attrib != nil) {
+            return YES;
+        }
+        
+        
+    }
+    
+    return NO;
+}
+
+- (NSString*)currencyGuidPrefix {
+    return [[self name] substringToString:@"CurrencyGuid"];
+}
+
+- (BOOL)isCurrencyGuid1 {
+    BOOL uomGuid = [[self name] hasSuffix:@"CurrencyGuid1"];
+    
+    if (uomGuid) {
+        
+        NSString *amountAttribName = [NSString stringWithFormat:@"%@Amount1",[self currencyGuid1Prefix]];
+        
+        NSAttributeDescription *attrib = [self.entity attributesByName][amountAttribName];
+        
+        if (attrib != nil) {
+            return YES;
+        }
+        
+        
+    }
+    
+    return NO;
+}
+
+- (NSString*)currencyGuid1Prefix {
+    return [[self name] substringToString:@"CurrencyGuid1"];
+}
+
 @end
 
 @implementation NSRelationshipDescription (collectionClassName)
@@ -606,15 +708,23 @@ static const NSString *const kReadOnly = @"mogenerator.readonly";
 - (NSString*)jr_CollectionClassStringWithOrderedClassName:(NSString*)orderedClassName
                                        unorderedClassName:(NSString*)unorderedClassName
 {
-    NSString *generic = [NSString stringWithFormat:@"<%@*>", self.destinationEntity.managedObjectClassName];
+    
     if (gSwift) {
-        // No generics for Swift sets, for now.
-        return [self jr_isOrdered] ? orderedClassName : unorderedClassName;
-    }
 
-    return [self jr_isOrdered]
+        if ([unorderedClassName isEqualToString:@"NSSet"]) {
+            unorderedClassName = [NSString stringWithFormat:@"Set<%@>", self.destinationEntity.managedObjectClassName];
+        }
+        
+        return [self jr_isOrdered] ? orderedClassName : unorderedClassName;
+        
+    } else {
+        NSString *generic = [NSString stringWithFormat:@"<%@*>", self.destinationEntity.managedObjectClassName];
+        
+        return [self jr_isOrdered]
         ? [orderedClassName stringByAppendingString:generic]
         : [unorderedClassName stringByAppendingString:generic];
+    }
+
 }
 
 - (NSString*)mutableCollectionClassName {
@@ -637,7 +747,18 @@ static const NSString *const kReadOnly = @"mogenerator.readonly";
 
 @end
 
+@implementation NSFetchedPropertyDescription (targetEntity)
+-(NSEntityDescription *)targetEntity {
+    NSString *entityName = [self.userInfo valueForKey:@"fetchedPropertyFetchRequestEntityName"];
+    if (entityName != nil) {
+        return self.entity.managedObjectModel.entitiesByName[entityName];
+    }
+    return nil;
+}
+@end
+
 @implementation NSString (camelCaseString)
+
 - (NSString*)camelCaseString {
     NSArray *lowerCasedWordArray = [[self wordArray] arrayByMakingObjectsPerformSelector:@selector(lowercaseString)];
     NSUInteger wordIndex = 1, wordCount = [lowerCasedWordArray count];
@@ -649,6 +770,11 @@ static const NSString *const kReadOnly = @"mogenerator.readonly";
     }
     return [camelCasedWordArray componentsJoinedByString:@""];
 }
+
+- (NSString*)replaceDotsByUnderscore {
+    return [self stringByReplacingEveryOccurrenceOfString:@"." withString:@"_"];
+}
+
 @end
 
 @interface MogeneratorTemplateDesc : NSObject {

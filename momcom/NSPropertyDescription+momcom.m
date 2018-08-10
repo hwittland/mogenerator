@@ -57,6 +57,7 @@
     }
 
     for (NSXMLElement *childNode in [xmlNode children]) {
+        
         if ([[childNode name] isEqualToString:@"userInfo"]) {
             for (NSXMLElement *entryElement in [childNode children]) {
                 NSXMLNode *keyAttribute = [entryElement attributeForName:@"key"];
@@ -64,6 +65,27 @@
                 [userInfo setObject:[valueAttribute stringValue] forKey:[keyAttribute stringValue]];
             }
         }
+
+        //<fetchRequest name="fetchedPropertyFetchRequest" entity="Item" predicateString="guid = $FETCH_SOURCE.itemGuid"/>
+        if ([[childNode name] isEqualToString:@"fetchRequest"]) {
+            
+            for (NSXMLNode *xmlAttribute in [childNode attributes]) {
+                
+                NSString *attributeName = [xmlAttribute name];
+                NSString *attributeString = [xmlAttribute stringValue];
+                
+                if ([attributeName isEqualToString:@"name"]) {
+                } else if ([attributeName isEqualToString:@"entity"]) {
+                    [userInfo setObject:attributeString forKey:@"fetchedPropertyFetchRequestEntityName"];
+//                    NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:attributeString];
+//                    [(NSFetchedPropertyDescription*)propertyDescription setFetchRequest:fetchRequest];
+                } else if ([attributeName isEqualToString:@"predicateString"]) {
+                }
+                
+            }
+            
+        }
+        
     }
     
     [propertyDescription setUserInfo:userInfo];
